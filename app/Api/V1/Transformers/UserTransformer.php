@@ -1,14 +1,12 @@
 <?php
+
+namespace App\Api\V1\Transformers;
+
 /**
- * Created by PhpStorm.
- * User: Santosh
- * Date: 5/22/2016
- * Time: 2:15 AM
+ * UserTransformer.
+ *
+ * @author Mayur Patel <mayurpatel3209@gmail.com>
  */
-
-namespace app\Api\V1\Transformers;
-
-
 class UserTransformer
 {
 

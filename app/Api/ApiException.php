@@ -1,41 +1,23 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+namespace App\Api;
 
-namespace Symfony\Component\HttpKernel\Exception;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * HttpException.
+ * ApiException.
  *
- * @author Kris Wallsmith <kris@symfony.com>
+ * @author Mayur Patel <mayurpatel3209@gmail.com>
  */
-class HttpException extends \RuntimeException implements HttpExceptionInterface
+class ApiException extends HttpException
 {
-    private $statusCode;
-    private $headers;
 
-    public function __construct($statusCode, $message = null, \Exception $previous = null, array $headers = array(), $code = 0)
-    {
-        $this->statusCode = $statusCode;
-        $this->headers = $headers;
+    public function __construct($message = "Api Exception", $code = 0, $statusCode = 500, \Exception $previous = null, array $headers = array()) {
 
-        parent::__construct($message, $code, $previous);
+        $headers['Exception-Type'] = 'API Exception';
+        $headers['Generated-By'] = 'Laravel API Handler';
+        parent::__construct($statusCode, $message, $previous, $headers, $code);
+
     }
 
-    public function getStatusCode()
-    {
-        return $this->statusCode;
-    }
-
-    public function getHeaders()
-    {
-        return $this->headers;
-    }
 }

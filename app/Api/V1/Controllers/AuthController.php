@@ -2,21 +2,26 @@
 
 namespace App\Api\V1\Controllers;
 
-use JWTAuth;
-use Validator;
-use Config;
+use App\Api\ApiController;
+use App\Api\V1\Transformers\UserTransformer;
 use App\User;
-use Illuminate\Http\Request;
-use Illuminate\Mail\Message;
-use Dingo\Api\Routing\Helpers;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Password;
-use Tymon\JWTAuth\Exceptions\JWTException;
+use Config;
 use Dingo\Api\Exception\ValidationHttpException;
+use Illuminate\Mail\Message;
+use JWTAuth;
+use League\Fractal\Resource\Item;
+use Password;
+use Request;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Validator;
 
-class AuthController extends Controller
+/**
+ * AuthController.
+ *
+ * @author Mayur Patel <mayurpatel3209@gmail.com>
+ */
+class AuthController extends ApiController
 {
-    use Helpers;
 
     public function login(Request $request)
     {
@@ -33,13 +38,17 @@ class AuthController extends Controller
 
         try {
             if (! $token = JWTAuth::attempt($credentials)) {
-                return $this->response->errorUnauthorized();
+                $this->response->errorUnauthorized();
+                return null;
             }
         } catch (JWTException $e) {
-            return $this->response->error('could_not_create_token', 500);
+            $this->response->error('could_not_create_token', 500);
         }
 
-        return response()->json(compact('token'));
+        $response = $this->transformer->createData(new Item(), new UserTransformer)->toArray();
+        $response['status'] = 1;
+
+        return $response;
     }
 
     public function signup(Request $request)
@@ -60,7 +69,7 @@ class AuthController extends Controller
         User::reguard();
 
         if(!$user->id) {
-            return $this->response->error('could_not_create_user', 500);
+            $this->response->error('could_not_create_user', 500);
         }
 
         if($hasToReleaseToken) {
@@ -88,15 +97,13 @@ class AuthController extends Controller
             case Password::RESET_LINK_SENT:
                 return $this->response->noContent();
             case Password::INVALID_USER:
-                return $this->response->errorNotFound();
+                $this->response->errorNotFound();
         }
     }
 
     public function reset(Request $request)
     {
-        $credentials = $request->only(
-            'email', 'password', 'password_confirmation', 'token'
-        );
+        $credentials = $request->only(['email', 'password', 'password_confirmation', 'token']);
 
         $validator = Validator::make($credentials, [
             'token' => 'required',
@@ -108,7 +115,7 @@ class AuthController extends Controller
             throw new ValidationHttpException($validator->errors()->all());
         }
         
-        $response = Password::reset($credentials, function ($user, $password) {
+        $response = Password::reset($credentials, function (User $user, $password) {
             $user->password = $password;
             $user->save();
         });
@@ -121,7 +128,7 @@ class AuthController extends Controller
                 return $this->response->noContent();
 
             default:
-                return $this->response->error('could_not_reset_password', 500);
+                $this->response->error('could_not_reset_password', 500);
         }
     }
 }
