@@ -3,13 +3,11 @@
 namespace App\Api\V1\Controllers;
 
 use App\Api\ApiController;
-use App\Api\V1\Transformers\UserTransformer;
 use App\User;
 use Config;
 use Dingo\Api\Exception\ValidationHttpException;
 use Illuminate\Mail\Message;
 use JWTAuth;
-use League\Fractal\Resource\Item;
 use Password;
 use Request;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -25,30 +23,24 @@ class AuthController extends ApiController
 
     public function login(Request $request)
     {
+        $this->validateRequest('login');
+        
         $credentials = $request->only(['email', 'password']);
-
-        $validator = Validator::make($credentials, [
-            'email' => 'required',
-            'password' => 'required',
-        ]);
-
-        if($validator->fails()) {
-            throw new ValidationHttpException($validator->errors()->all());
-        }
-
+        
         try {
-            if (! $token = JWTAuth::attempt($credentials)) {
+            if (!$token = JWTAuth::attempt($credentials)) {
                 $this->response->errorUnauthorized();
                 return null;
             }
         } catch (JWTException $e) {
             $this->response->error('could_not_create_token', 500);
+            exit;
         }
 
-        $response = $this->transformer->createData(new Item(), new UserTransformer)->toArray();
-        $response['status'] = 1;
+        return [
+            'token' => $token
+        ];
 
-        return $response;
     }
 
     public function signup(Request $request)
@@ -60,7 +52,7 @@ class AuthController extends ApiController
 
         $validator = Validator::make($userData, Config::get('boilerplate.signup_fields_rules'));
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             throw new ValidationHttpException($validator->errors()->all());
         }
 
@@ -68,14 +60,14 @@ class AuthController extends ApiController
         $user = User::create($userData);
         User::reguard();
 
-        if(!$user->id) {
+        if (!$user->id) {
             $this->response->error('could_not_create_user', 500);
         }
 
-        if($hasToReleaseToken) {
+        if ($hasToReleaseToken) {
             return $this->login($request);
         }
-        
+
         return $this->response->created();
     }
 
@@ -85,7 +77,7 @@ class AuthController extends ApiController
             'email' => 'required'
         ]);
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             throw new ValidationHttpException($validator->errors()->all());
         }
 
@@ -111,10 +103,10 @@ class AuthController extends ApiController
             'password' => 'required|confirmed|min:6',
         ]);
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             throw new ValidationHttpException($validator->errors()->all());
         }
-        
+
         $response = Password::reset($credentials, function (User $user, $password) {
             $user->password = $password;
             $user->save();
@@ -122,7 +114,7 @@ class AuthController extends ApiController
 
         switch ($response) {
             case Password::PASSWORD_RESET:
-                if(Config::get('boilerplate.reset_token_release')) {
+                if (Config::get('boilerplate.reset_token_release')) {
                     return $this->login($request);
                 }
                 return $this->response->noContent();

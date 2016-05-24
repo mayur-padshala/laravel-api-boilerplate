@@ -12,7 +12,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class ApiException extends HttpException
 {
 
-    public function __construct($message = "Api Exception", $code = 0, $statusCode = 500, \Exception $previous = null, array $headers = array()) {
+    public function __construct($message = "Api Exception", $code = 0, $statusCode = 500, \Exception $previous = null, array $headers = array())
+    {
 
         $headers['Exception-Type'] = 'API Exception';
         $headers['Generated-By'] = 'Laravel API Handler';

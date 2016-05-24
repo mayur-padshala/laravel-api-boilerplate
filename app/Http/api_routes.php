@@ -7,6 +7,6 @@ $api = app('Dingo\Api\Routing\Router');
 
 $api->version('v1', function (\Dingo\Api\Routing\Router $api) {
 
-	require_once app_path('Api/V1/routes.php');
+    require_once app_path('Api/V1/routes.php');
 
 });
